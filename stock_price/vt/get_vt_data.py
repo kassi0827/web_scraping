@@ -7,10 +7,26 @@ import xlwings as xw
 # 更新対象ファイルのパス
 excel_path = '/Users/kashimataichi/play_python/web_scraping/stock_price/vt/vt_data.xlsx'
 
+
 # ファイルのデータがある最終行と最終列を取得
 wb = openpyxl.load_workbook(excel_path)
 ws = wb['vt_data']
 max_row_plus_one = ws.max_row + 1
+
+
+# エクセル転記処理用の連想配列
+dict_excel_input = {
+    'B列始値': (2, 0),
+    'C列前日終値': (3, 3),
+    'D列出来高': (4, 2),
+    'E列1年TR': (5, 22),
+    'F列3年TR': (6, 19),
+    'G列5年TR': (7, 20),
+    'H列年初来R': (8, 23),
+    'I列日次安値-高値レンジ': (9, 1),
+    'J列52週レンジ': (10, 4),
+    'K列資産総額': (11, 11),
+}
 
 
 # 年月日の転記
@@ -29,38 +45,17 @@ res = requests.get(vt_bloomberg_url)
 soup = BeautifulSoup(res.text, 'html.parser')
 elems = soup.find_all('div', attrs={'class': 'cell__value cell__value_'})
 
-# B列始値の転記
-ws.cell(row=max_row_plus_one, column=2).value = elems[0].contents[0]
-
-# C列前日終値の転記
-ws.cell(row=max_row_plus_one, column=3).value = elems[3].contents[0]
-
-# D列出来高
-ws.cell(row=max_row_plus_one, column=4).value = elems[2].contents[0]
-
-# I列日次安値高値レンジ
-ws.cell(row=max_row_plus_one, column=9).value = elems[1].contents[0]
-
-# J列52週レンジの転記
-ws.cell(row=max_row_plus_one, column=10).value = elems[4].contents[0]
-
-# F列3年トータルリターン
-ws.cell(row=max_row_plus_one, column=6).value = elems[19].contents[0]
-
-# G列5年トータルリターン
-ws.cell(row=max_row_plus_one, column=7).value = elems[20].contents[0]
-
-# K列純資産額
-ws.cell(row=max_row_plus_one, column=11).value = elems[11].contents[0]
-
 elems_others = soup.find_all(
     'div', attrs={'class': 'cell__value cell__value_down'})
 
-# E列1年トータルリターン
-ws.cell(row=max_row_plus_one, column=5).value = elems_others[1].contents[0]
+for element in elems_others:
+    elems.append(element)
 
-# H列年初来リターン
-ws.cell(row=max_row_plus_one, column=8).value = elems_others[2].contents[0]
+# 実際の転記処理
+for execution in dict_excel_input:
+    ws.cell(row=max_row_plus_one,
+            column=dict_excel_input[execution][0]).value = elems[dict_excel_input[execution][1]].contents[0]
+
 
 wb.save(excel_path)
 
